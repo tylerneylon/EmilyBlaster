@@ -36,6 +36,9 @@ pygame.mixer.init()
 # Clock for FPS control
 clock = pygame.time.Clock()
 
+# Load background image
+background_image = pygame.image.load('bg_1.png')
+
 # Load sound effects
 splat = pygame.mixer.Sound('splat2.wav')
 
@@ -152,7 +155,7 @@ while running:
         all_sprites.add(enemy)
 
     # Draw everything
-    screen.fill(BLACK)
+    screen.blit(background_image, (0, 0))
     all_sprites.draw(screen)
 
     # Draw score
