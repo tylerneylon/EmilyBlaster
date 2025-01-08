@@ -37,7 +37,7 @@ pygame.mixer.init()
 clock = pygame.time.Clock()
 
 # Load sound effects
-splat = pygame.mixer.Sound('splat.wav')
+splat = pygame.mixer.Sound('splat2.wav')
 
 # Player class
 class Player(pygame.sprite.Sprite):
