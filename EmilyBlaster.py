@@ -155,7 +155,9 @@ while running:
         all_sprites.add(enemy)
 
     # Draw everything
-    screen.blit(background_image, (0, 0))
+    bg_x = (SCREEN_WIDTH - background_image.get_width()) // 2
+    bg_y = (SCREEN_HEIGHT - background_image.get_height()) // 2
+    screen.blit(background_image, (bg_x, bg_y))
     all_sprites.draw(screen)
 
     # Draw score
