@@ -28,7 +28,9 @@ ENEMY_HEIGHT = 20
 ENEMY_SPEED = 2
 NUM_ENEMIES = 8
 
-# Initialize screen and mixer
+# Load font
+font_path = 'dogicapixel.ttf'
+enemy_font = pygame.font.Font(font_path, 20)
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('EmilyBlaster')
 pygame.mixer.init()
@@ -91,8 +93,9 @@ class Bullet(pygame.sprite.Sprite):
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
-        self.image = pygame.Surface((ENEMY_WIDTH, ENEMY_HEIGHT))
-        self.image.fill(RED)
+        text_surface = enemy_font.render("hi there", True, RED)
+        self.image = pygame.Surface((text_surface.get_width(), text_surface.get_height()))
+        self.image.blit(text_surface, (0, 0))
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
