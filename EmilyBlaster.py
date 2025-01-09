@@ -29,6 +29,13 @@ ENEMY_HEIGHT = 20
 ENEMY_SPEED = 2
 NUM_ENEMIES = 8
 
+# Some poetry
+# I plan to later put this into a separate file.
+poem1 = '''Because I could not stop for Death -
+He kindly stopped for me -
+The Carriage held but just Ourselves -
+And Immortality.'''
+
 # Load font
 font_path = 'dogicapixel.ttf'
 main_font = pygame.font.Font(font_path, 20)
@@ -110,16 +117,17 @@ class Enemy(pygame.sprite.Sprite):
 WHITE_W_ALPHA = (255, 255, 255, 32)
 
 class Poem(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, poem):
         super().__init__()
-        text_surface = main_font.render('LAN party', False, WHITE)
-        self.image = pygame.Surface(
-                (text_surface.get_width() + 3, text_surface.get_height() + 3),
-                pygame.SRCALPHA
-        )
-        self.render_text('LAN party', BLACK, 255, (2, 0))
-        self.render_text('LAN party', WHITE, 255, (0, 2))
-        self.render_text('LAN party', GRAY , 255, (1, 1))
+
+        self.interline_skip = 10
+        w, h = self.get_text_size(poem)
+
+        self.image = pygame.Surface((w, h), pygame.SRCALPHA)
+
+        self.render_text(poem, BLACK, 255, (2, 0))
+        self.render_text(poem, WHITE, 255, (0, 2))
+        self.render_text(poem, GRAY , 255, (1, 1))
         self.image.set_alpha(64)
 
         self.rect = self.image.get_rect()
@@ -127,18 +135,34 @@ class Poem(pygame.sprite.Sprite):
         self.rect.centery = SCREEN_HEIGHT // 2
 
     def render_text(self, text, color, alpha, position):
-        text_surface = main_font.render(text, False, color)
-        text_surface.set_alpha(alpha)
-        text_rect = text_surface.get_rect(topleft=position)
+        lines = text.split('\n')
+        y_offset = 0
+        for line in lines:
+            pos = (position[0], position[1] + y_offset)
+            text_surface = main_font.render(line, False, color)
+            text_surface.set_alpha(alpha)
+            text_rect = text_surface.get_rect(topleft=pos)
+            self.image.blit(text_surface, text_rect)
+            y_offset += text_surface.get_height() + self.interline_skip
 
-        self.image.blit(text_surface, text_rect)
+    def get_text_size(self, text):
+        lines = text.split('\n')
+        w, h = 2, 2  # Start height at 2 to account for embossing offsets.
+        for i, line in enumerate(lines):
+            text_surface = main_font.render(line, False, WHITE)
+            w = max(w, text_surface.get_width() + 2)
+            h += text_surface.get_height()
+            if i > 0:
+                h += self.interline_skip
+        return w, h
+
 
 
 # Initialize sprites
 player = Player()
 bullets = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
-poem = Poem()
+poem = Poem(poem1)
 
 # Create enemies
 for i in range(NUM_ENEMIES):
