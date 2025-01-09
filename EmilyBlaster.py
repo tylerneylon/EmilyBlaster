@@ -11,6 +11,7 @@ SCREEN_HEIGHT = 600
 # Colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
+GRAY  = (128, 128, 128)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 
@@ -30,7 +31,7 @@ NUM_ENEMIES = 8
 
 # Load font
 font_path = 'dogicapixel.ttf'
-enemy_font = pygame.font.Font(font_path, 20)
+main_font = pygame.font.Font(font_path, 20)
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('EmilyBlaster')
 pygame.mixer.init()
@@ -93,7 +94,7 @@ class Bullet(pygame.sprite.Sprite):
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
-        text_surface = enemy_font.render("hi there", True, RED)
+        text_surface = main_font.render("hi there", True, RED)
         self.image = pygame.Surface((text_surface.get_width(), text_surface.get_height()))
         self.image.blit(text_surface, (0, 0))
         self.rect = self.image.get_rect()
@@ -106,10 +107,38 @@ class Enemy(pygame.sprite.Sprite):
         if self.rect.right > SCREEN_WIDTH or self.rect.left < 0:
             self.speed_x *= -1
 
+WHITE_W_ALPHA = (255, 255, 255, 32)
+
+class Poem(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        text_surface = main_font.render('LAN party', False, WHITE)
+        self.image = pygame.Surface(
+                (text_surface.get_width() + 3, text_surface.get_height() + 3),
+                pygame.SRCALPHA
+        )
+        self.render_text('LAN party', BLACK, 255, (2, 0))
+        self.render_text('LAN party', WHITE, 255, (0, 2))
+        self.render_text('LAN party', GRAY , 255, (1, 1))
+        self.image.set_alpha(64)
+
+        self.rect = self.image.get_rect()
+        self.rect.centerx = SCREEN_WIDTH // 2
+        self.rect.centery = SCREEN_HEIGHT // 2
+
+    def render_text(self, text, color, alpha, position):
+        text_surface = main_font.render(text, False, color)
+        text_surface.set_alpha(alpha)
+        text_rect = text_surface.get_rect(topleft=position)
+
+        self.image.blit(text_surface, text_rect)
+
+
 # Initialize sprites
 player = Player()
 bullets = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
+poem = Poem()
 
 # Create enemies
 for i in range(NUM_ENEMIES):
@@ -121,6 +150,7 @@ for i in range(NUM_ENEMIES):
 all_sprites = pygame.sprite.Group()
 all_sprites.add(player)
 all_sprites.add(enemies)
+all_sprites.add(poem)
 
 # Game loop
 running = True
