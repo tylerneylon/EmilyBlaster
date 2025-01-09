@@ -121,14 +121,18 @@ class Poem(pygame.sprite.Sprite):
         super().__init__()
 
         self.interline_skip = 10
+        p = self.padding = 10
         w, h = self.get_text_size(poem)
+        w, h = w + 2 * p, h + 2 * p
 
         self.image = pygame.Surface((w, h), pygame.SRCALPHA)
+        # self.image.fill(WHITE)
+        pygame.draw.rect(self.image, WHITE, (0, 0, w, h), border_radius=p)
 
-        self.render_text(poem, BLACK, 255, (2, 0))
-        self.render_text(poem, WHITE, 255, (0, 2))
-        self.render_text(poem, GRAY , 255, (1, 1))
-        self.image.set_alpha(64)
+        self.render_text(poem, BLACK, 255, (p + 2, p    ))
+        self.render_text(poem, WHITE, 255, (p    , p + 2))
+        self.render_text(poem, GRAY , 255, (p + 1, p + 1))
+        self.image.set_alpha(96)
 
         self.rect = self.image.get_rect()
         self.rect.centerx = SCREEN_WIDTH // 2
