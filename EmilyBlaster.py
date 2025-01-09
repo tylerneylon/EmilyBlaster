@@ -199,7 +199,7 @@ while running:
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
                 # Shoot bullet
-                bullet = Bullet(player.rect.centerx, player.rect.top)
+                bullet = Bullet(player.rect.centerx + 49, player.rect.top)
                 all_sprites.add(bullet)
                 bullets.add(bullet)
 
