@@ -67,6 +67,10 @@ class Player(pygame.sprite.Sprite):
         self.rect.centerx = SCREEN_WIDTH // 2
         self.speed_x = 0
 
+        # Allow player to go slightly off screen.
+        self.min_x = -70
+        self.max_x = SCREEN_WIDTH + 10
+
     def update(self):
         keys = pygame.key.get_pressed()
         self.speed_x = 0
@@ -76,10 +80,10 @@ class Player(pygame.sprite.Sprite):
             self.speed_x = PLAYER_SPEED
         self.rect.x += self.speed_x
         # Prevent player from going off screen
-        if self.rect.left < 0:
-            self.rect.left = 0
-        if self.rect.right > SCREEN_WIDTH:
-            self.rect.right = SCREEN_WIDTH
+        if self.rect.left < self.min_x:
+            self.rect.left = self.min_x
+        if self.rect.right > self.max_x:
+            self.rect.right = self.max_x
 
 # Bullet class
 class Bullet(pygame.sprite.Sprite):
