@@ -107,11 +107,12 @@ class Bullet(pygame.sprite.Sprite):
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
-        bg_nineslice = NineSlice('word_box_2.png', (91, 61), (91, 62))
+        bg_nineslice = NineSlice('word_box_5.png', (52, 27), (55, 29))
         text_surface = main_font.render("hi there", True, (80, 60, 30))
         text_w, text_h = text_surface.get_width(), text_surface.get_height()
-        w = max(text_w, bg_nineslice.minwidth)
-        h = max(text_h, bg_nineslice.minheight)
+        pad_w, pad_h = 40, 25
+        w = max(text_w + pad_w, bg_nineslice.minwidth)
+        h = max(text_h + pad_h, bg_nineslice.minheight)
         self.image = pygame.Surface((w, h), pygame.SRCALPHA)
         bg_nineslice.draw(self.image, 0, 0, w, h)
         self.image.blit(text_surface, ((w - text_w) // 2, (h - text_h) // 2))
