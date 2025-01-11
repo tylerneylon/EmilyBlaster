@@ -7,8 +7,8 @@ from nineslice import NineSlice
 pygame.init()
 
 # Screen dimensions
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH  = 1024
+SCREEN_HEIGHT =  768
 
 # Colors
 WHITE = (255, 255, 255)
