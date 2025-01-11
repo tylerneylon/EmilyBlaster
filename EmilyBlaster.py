@@ -108,7 +108,7 @@ class Enemy(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
         bg_nineslice = NineSlice('word_box_2.png', (91, 61), (91, 62))
-        text_surface = main_font.render("hi there", True, RED)
+        text_surface = main_font.render("hi there", True, (80, 60, 30))
         text_w, text_h = text_surface.get_width(), text_surface.get_height()
         w = max(text_w, bg_nineslice.minwidth)
         h = max(text_h, bg_nineslice.minheight)
@@ -118,7 +118,7 @@ class Enemy(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-        self.speed_x = ENEMY_SPEED if random.choice([True, False]) else -ENEMY_SPEED
+        self.speed_x = random.choice([-1, 1]) * ENEMY_SPEED
 
     def update(self):
         self.rect.x += self.speed_x
