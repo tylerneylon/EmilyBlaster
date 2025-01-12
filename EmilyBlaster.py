@@ -60,7 +60,11 @@ pygame.init()
 # Load font
 font_path = 'dogicapixel.ttf'
 main_font = pygame.font.Font(font_path, 20)
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+screen = pygame.display.set_mode(
+        (SCREEN_WIDTH, SCREEN_HEIGHT),
+        pygame.DOUBLEBUF,
+        vsync=True
+)
 pygame.display.set_caption('EmilyBlaster')
 pygame.mixer.init()
 
