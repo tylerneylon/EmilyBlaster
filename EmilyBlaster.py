@@ -1,10 +1,22 @@
+''' EmilyBlaster.py
+
+    This is a pixel art retro game based on the description of Sadie Green's
+    first college-made game in the book Tomorrow, and Tomorrow, and Tomorrow by
+    Gabrielle Zevin.
+'''
+
+
+# ______________________________________________________________________
+# Imports
+
 import pygame
 import random
 
 from nineslice import NineSlice
 
-# Initialize pygame
-pygame.init()
+
+# ______________________________________________________________________
+# Globals and constants
 
 # Screen dimensions
 SCREEN_WIDTH  = 1024
@@ -38,6 +50,13 @@ He kindly stopped for me -
 The Carriage held but just Ourselves -
 And Immortality.'''
 
+
+# ______________________________________________________________________
+# Initialization
+
+# Initialize pygame
+pygame.init()
+
 # Load font
 font_path = 'dogicapixel.ttf'
 main_font = pygame.font.Font(font_path, 20)
@@ -53,6 +72,10 @@ background_image = pygame.image.load('bg_1.png')
 
 # Load sound effects
 splat = pygame.mixer.Sound('splat2.wav')
+
+
+# ______________________________________________________________________
+# Classes
 
 # Player class
 class Player(pygame.sprite.Sprite):
@@ -173,6 +196,8 @@ class Poem(pygame.sprite.Sprite):
         return w, h
 
 
+# ______________________________________________________________________
+# Main game code
 
 # Initialize sprites
 player = Player()
