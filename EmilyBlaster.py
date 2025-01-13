@@ -9,8 +9,10 @@
 # ______________________________________________________________________
 # Imports
 
-import pygame
+import math
 import random
+
+import pygame
 
 from nineslice import NineSlice
 
@@ -130,12 +132,124 @@ class Bullet(pygame.sprite.Sprite):
         if self.rect.bottom < 0:
             self.kill()
 
+TOP_MARGIN = 35
+BOTTOM_MARGIN = 100
+
+# A class to assist with word tile movements
+class WordPaths:
+    def __init__(self, poem):
+        self.poem = poem
+        self.substrings = self._breakdown_poem()
+
+        # Determine the path metrics.
+        widest_tile = self._compute_widest_tile()
+        row_skip = (SCREEN_HEIGHT - TOP_MARGIN - BOTTOM_MARGIN) // 11
+        top_path_y = TOP_MARGIN + row_skip // 2
+        self._determine_paths(widest_tile, row_skip, top_path_y)
+
+        # Compute where each tile should begin.
+        self._initialize_tile_positions()
+
+    def _compute_widest_tile(self):
+        self.tile_offsets = []
+        self.tile_widths  = []
+        widest = 0
+        for s in self.substrings:
+            e = Enemy(0, 0, 0, s)
+            r = e.image.get_rect()
+            self.tile_offsets.append((-r.width // 2, -r.height // 2))
+            self.tile_widths.append(r.width)
+            widest = max(widest, r.width)
+        return widest
+
+    def _breakdown_poem(self):
+        lines = self.poem.split('\n')
+        return [
+                word
+                for line in lines
+                for word in line.split()
+        ]
+
+    def _determine_paths(self, widest_tile, row_skip, top_path_y):
+        self.paths = []
+        scr_w = SCREEN_WIDTH
+        w = widest_tile // 2
+        for path_idx in range(2):
+
+            def refl(x, i=-1):
+                if path_idx == 0 and i > 0:
+                    x = x - widest_tile if x == scr_w - w else x
+                if path_idx == 1:
+                    x = scr_w - x
+                    if i < 2:
+                        x = x + widest_tile if x == w else x
+                return x
+
+            path = []  # This will be a set of (x, y) points (tuples).
+            offscreen_x = -w - 10
+            x = refl(offscreen_x)
+            y = top_path_y + 2 * row_skip * path_idx
+            for i in range(3):
+                path.append((x, y))
+                x = refl(scr_w - w, i)
+
+                # Special case: End early if this is the last row.
+                if path_idx == 1 and i == 2:
+                    x = offscreen_x
+                    path.append((x, y))
+                    break
+
+                path.append((x, y))
+                y += row_skip
+                path.append((x, y))
+                x = refl(w, i) if i < 2 else refl(offscreen_x, i)
+                path.append((x, y))
+                y += 3 * row_skip
+            self.paths.append(path)
+            # print(f'path {path_idx}:', path)
+
+    def _initialize_tile_positions(self):
+        ''' This will set up the self.tile_start[] list. '''
+        pad = 30
+        self.tile_start = []
+        t = [0, 0]
+        prev_w = [0, 0]
+        for i, width in enumerate(self.tile_widths):
+            idx = i % 2
+            s = t[idx] - (prev_w[idx] + width) // 2 - pad
+            self.tile_start.append(s)
+            t[idx] = s
+            prev_w[idx] = width
+
+    def get_tile_pos(self, tile_idx, t):
+        ''' Return the top-left x, y coordinates of the given tile. '''
+        speed = 60  # This is in pixels per second.
+        pos  = max(0, self.tile_start[tile_idx] + t / 1000 * speed)
+        d    = 0
+        path = self.paths[tile_idx % 2]
+        x, y = path[0]
+        dx, dy = self.tile_offsets[tile_idx]  # To move from center to topleft.
+        for x2, y2 in path[1:]:
+            dist = math.sqrt((x2 - x) ** 2 + (y2 - y) ** 2)
+            if d + dist > pos:
+                perc = (pos - d) / dist
+                x += (x2 - x) * perc
+                y += (y2 - y) * perc
+                return x + dx, y + dy
+            d += dist
+            x, y = x2, y2
+        # If we get here, then the tile is off the screen.
+        # We'll return the path's final endpoint.
+        x, y = path[-1]
+        return x + dx, y + dy
+
 # Enemy class
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, x, y):
+    def __init__(self, x, y, tile_idx, s):
         super().__init__()
+        self.tile_idx = tile_idx
         bg_nineslice = NineSlice('word_box_6.png', (52, 27), (55, 29))
-        text_surface = main_font.render("hi there", True, (80, 60, 30))
+        text_surface = main_font.render(s, True, (80, 60, 30))
         text_w, text_h = text_surface.get_width(), text_surface.get_height()
         pad_w, pad_h = 40, 25
         w = max(text_w + pad_w, bg_nineslice.minwidth)
@@ -149,11 +263,14 @@ class Enemy(pygame.sprite.Sprite):
         self.speed_x = random.choice([-1, 1]) * ENEMY_SPEED
 
     def update(self):
-        self.rect.x += self.speed_x
-        if self.rect.right > SCREEN_WIDTH or self.rect.left < 0:
-            self.speed_x *= -1
-
-WHITE_W_ALPHA = (255, 255, 255, 32)
+        t = pygame.time.get_ticks()
+        x, y = word_paths.get_tile_pos(self.tile_idx, t)
+        self.rect.x = x
+        self.rect.y = y
+        if False:
+            self.rect.x += self.speed_x
+            if self.rect.right > SCREEN_WIDTH or self.rect.left < 0:
+                self.speed_x *= -1
 
 class Poem(pygame.sprite.Sprite):
     def __init__(self, poem):
@@ -209,17 +326,18 @@ bullets = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
 poem = Poem(poem1)
 
+word_paths = WordPaths(poem1)
+
 # Create enemies
-for i in range(NUM_ENEMIES):
-    x = random.randint(0, SCREEN_WIDTH - ENEMY_WIDTH)
-    y = random.randint(20, 200)
-    enemy = Enemy(x, y)
+for i, s in enumerate(word_paths.substrings):
+    x, y = word_paths.get_tile_pos(i, 0)
+    enemy = Enemy(x, y, i, s)
     enemies.add(enemy)
 
 all_sprites = pygame.sprite.Group()
+all_sprites.add(poem)
 all_sprites.add(player)
 all_sprites.add(enemies)
-all_sprites.add(poem)
 
 # Game loop
 running = True
@@ -249,12 +367,13 @@ while running:
         splat.play()
     for hit in hits:
         score += 1
-        # Spawn a new enemy at a random position
-        x = random.randint(0, SCREEN_WIDTH - ENEMY_WIDTH)
-        y = random.randint(20, 200)
-        enemy = Enemy(x, y)
-        enemies.add(enemy)
-        all_sprites.add(enemy)
+        if False:
+            # Spawn a new enemy at a random position
+            x = random.randint(0, SCREEN_WIDTH - ENEMY_WIDTH)
+            y = random.randint(20, 200)
+            enemy = Enemy(x, y)
+            enemies.add(enemy)
+            all_sprites.add(enemy)
 
     # Draw everything
     bg_x = (SCREEN_WIDTH - background_image.get_width()) // 2
