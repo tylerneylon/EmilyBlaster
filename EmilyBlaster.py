@@ -210,7 +210,7 @@ class WordPaths:
 
     def _initialize_tile_positions(self):
         ''' This will set up the self.tile_start[] list. '''
-        pad = 30
+        pad = 60
         self.tile_start = []
         t = [0, 0]
         prev_w = [0, 0]
@@ -223,7 +223,7 @@ class WordPaths:
 
     def get_tile_pos(self, tile_idx, t):
         ''' Return the top-left x, y coordinates of the given tile. '''
-        speed = 60  # This is in pixels per second.
+        speed = 170  # This is in pixels per second.
         pos  = max(0, self.tile_start[tile_idx] + t / 1000 * speed)
         d    = 0
         path = self.paths[tile_idx % 2]
