@@ -276,25 +276,65 @@ class Poem(pygame.sprite.Sprite):
     def __init__(self, poem):
         super().__init__()
 
-        self.interline_skip = 10
+        self.interline_skip = 16
         p = self.padding = 10
-        w, h = self.get_text_size(poem)
+
+        # Quietly render the text just to learn the sizing.
+        n = self._get_num_words(poem)
+        self.render_rich_text(poem, [WHITE] * n, 255, (0, 0), do_blit=False)
+        w, h = self.text_w, self.text_h
         w, h = w + 2 * p, h + 2 * p
 
         self.image = pygame.Surface((w, h), pygame.SRCALPHA)
         # self.image.fill(WHITE)
         pygame.draw.rect(self.image, WHITE, (0, 0, w, h), border_radius=p)
 
-        self.render_text(poem, BLACK, 255, (p + 2, p    ))
-        self.render_text(poem, WHITE, 255, (p    , p + 2))
-        self.render_text(poem, GRAY , 255, (p + 1, p + 1))
+        self.render_rich_text(poem, [BLACK] * n, 255, (p + 2, p    ))
+        self.render_rich_text(poem, [WHITE] * n, 255, (p    , p + 2))
+        self.render_rich_text(poem, [GRAY]  * n, 255, (p + 1, p + 1))
         self.image.set_alpha(96)
 
         self.rect = self.image.get_rect()
         self.rect.centerx = SCREEN_WIDTH // 2
         self.rect.centery = SCREEN_HEIGHT // 2
 
-    def render_text(self, text, color, alpha, position):
+    def _get_num_words(self, poem):
+        return len([
+            w
+            for line in poem
+            for w in line.split()
+        ])
+
+    def render_string(self, s, color, alpha, pos):
+        text_surface = main_font.render(s, False, color)
+        text_surface.set_alpha(alpha)
+        text_rect = text_surface.get_rect(topleft=pos)
+        self.image.blit(text_surface, text_rect)
+
+    def render_rich_text(
+            self, text, word_colors, alpha, position, do_blit=True):
+        lines = text.split('\n')
+        w_idx = 0
+        pos = list(position)
+        w, h = 0, 0
+        for line in lines:
+            for word in line.split():
+                color = word_colors[w_idx]
+                text_surface = main_font.render(word, False, color)
+                text_surface.set_alpha(alpha)
+                text_rect = text_surface.get_rect(topleft=pos)
+                if do_blit:
+                    self.image.blit(text_surface, text_rect)
+                w_idx += 1
+                w = max(w, pos[0] + text_surface.get_width())
+                pos[0] += text_surface.get_width() + 10
+            h = max(h, pos[1] + text_surface.get_height())
+            pos[0] = position[0]
+            pos[1] += text_surface.get_height() + self.interline_skip
+        self.text_w = w
+        self.text_h = h
+
+    def render_multiline_text(self, text, color, alpha, position):
         lines = text.split('\n')
         y_offset = 0
         for line in lines:
