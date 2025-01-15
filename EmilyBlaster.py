@@ -73,8 +73,12 @@ pygame.mixer.init()
 # Clock for FPS control
 clock = pygame.time.Clock()
 
-# Load background image
-background_image = pygame.image.load('bg_1.png')
+# Load and scale background image
+background_image = pygame.image.load('tombstone_bg.png')
+bg_width, bg_height = background_image.get_size()
+scale_factor = max(SCREEN_WIDTH / bg_width, SCREEN_HEIGHT / bg_height)
+new_size = (int(bg_width * scale_factor), int(bg_height * scale_factor))
+background_image = pygame.transform.scale(background_image, new_size)
 
 # Load sound effects
 splat = pygame.mixer.Sound('splat2.wav')
@@ -224,6 +228,7 @@ class WordPaths:
     def get_tile_pos(self, tile_idx, t):
         ''' Return the top-left x, y coordinates of the given tile. '''
         speed = 170  # This is in pixels per second.
+        speed = 300
         pos  = max(0, self.tile_start[tile_idx] + t / 1000 * speed)
         d    = 0
         path = self.paths[tile_idx % 2]
