@@ -278,7 +278,7 @@ class Enemy(pygame.sprite.Sprite):
                 self.speed_x *= -1
 
 class Poem(pygame.sprite.Sprite):
-    def __init__(self, poem):
+    def __init__(self, poem, delta_x=0):
         super().__init__()
 
         self.interline_skip = 16
@@ -300,7 +300,7 @@ class Poem(pygame.sprite.Sprite):
         self.image.set_alpha(96)
 
         self.rect = self.image.get_rect()
-        self.rect.centerx = SCREEN_WIDTH // 2
+        self.rect.centerx = SCREEN_WIDTH // 2 + delta_x
         self.rect.centery = SCREEN_HEIGHT // 2
 
     def _get_num_words(self, poem):
@@ -369,7 +369,7 @@ class Poem(pygame.sprite.Sprite):
 player = Player()
 bullets = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
-poem = Poem(poem1)
+poem = Poem(poem1, delta_x=-150)
 
 word_paths = WordPaths(poem1)
 
