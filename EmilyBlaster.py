@@ -447,7 +447,7 @@ while running:
     all_sprites.draw(screen)
 
     # Draw score
-    score_text = font.render(f"Score: {score}", True, WHITE)
+    score_text = main_font.render(f"Score: {score}", True, WHITE)
     screen.blit(score_text, (10, 10))
 
     # Refresh display
