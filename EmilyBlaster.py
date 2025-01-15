@@ -30,6 +30,7 @@ BLACK = (0, 0, 0)
 GRAY  = (128, 128, 128)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
+TRANSPARENT = (0, 0, 0, 0)
 
 # Game settings
 PLAYER_WIDTH = 50
@@ -285,23 +286,29 @@ class Poem(pygame.sprite.Sprite):
         p = self.padding = 10
 
         # Quietly render the text just to learn the sizing.
-        n = self._get_num_words(poem)
-        self.render_rich_text(poem, [WHITE] * n, 255, (0, 0), do_blit=False)
+        self.n = n = self._get_num_words(poem)
+        buff = pygame.Surface((0, 0), pygame.SRCALPHA)
+        self.render_rich_text(buff, poem, [WHITE] * n, 255, (0, 0), do_blit=False)
         w, h = self.text_w, self.text_h
         w, h = w + 2 * p, h + 2 * p
 
         self.image = pygame.Surface((w, h), pygame.SRCALPHA)
-        # self.image.fill(WHITE)
-        pygame.draw.rect(self.image, WHITE, (0, 0, w, h), border_radius=p)
 
-        self.render_rich_text(poem, [BLACK] * n, 255, (p + 2, p    ))
-        self.render_rich_text(poem, [WHITE] * n, 255, (p    , p + 2))
-        self.render_rich_text(poem, [GRAY]  * n, 255, (p + 1, p + 1))
-        self.image.set_alpha(96)
+        # Initially render to a buffer image that we can make translucent.
+        buff = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.rect(buff, (255, 255, 255, 64), (0, 0, w, h), border_radius=p)
+        self.render_rich_text(buff, poem, [BLACK] * n, 255, (p + 2, p    ))
+        self.render_rich_text(buff, poem, [WHITE] * n, 255, (p    , p + 2))
+        self.render_rich_text(buff, poem, [GRAY]  * n, 255, (p + 1, p + 1))
+        buff.set_alpha(128)
+
+        self.image.blit(buff, (0, 0))
 
         self.rect = self.image.get_rect()
         self.rect.centerx = SCREEN_WIDTH // 2 + delta_x
         self.rect.centery = SCREEN_HEIGHT // 2
+
+        self.poem = poem
 
     def _get_num_words(self, poem):
         return len([
@@ -317,7 +324,7 @@ class Poem(pygame.sprite.Sprite):
         self.image.blit(text_surface, text_rect)
 
     def render_rich_text(
-            self, text, word_colors, alpha, position, do_blit=True):
+            self, dst, text, word_colors, alpha, position, do_blit=True):
         lines = text.split('\n')
         w_idx = 0
         pos = list(position)
@@ -328,8 +335,8 @@ class Poem(pygame.sprite.Sprite):
                 text_surface = main_font.render(word, False, color)
                 text_surface.set_alpha(alpha)
                 text_rect = text_surface.get_rect(topleft=pos)
-                if do_blit:
-                    self.image.blit(text_surface, text_rect)
+                if do_blit and (color != TRANSPARENT):
+                    dst.blit(text_surface, text_rect)
                 w_idx += 1
                 w = max(w, pos[0] + text_surface.get_width())
                 pos[0] += text_surface.get_width() + 10
@@ -360,6 +367,14 @@ class Poem(pygame.sprite.Sprite):
             if i > 0:
                 h += self.interline_skip
         return w, h
+
+    def highlight_word_idx(self, word_idx):
+        word_colors = [TRANSPARENT] * self.n
+        word_colors[word_idx] = WHITE
+        p = self.padding
+        self.render_rich_text(
+                self.image, self.poem, word_colors, 255, (p + 1, p + 1)
+        )
 
 
 # ______________________________________________________________________
@@ -412,6 +427,7 @@ while running:
         splat.play()
     for hit in hits:
         score += 1
+        poem.highlight_word_idx(hit.tile_idx)
         if False:
             # Spawn a new enemy at a random position
             x = random.randint(0, SCREEN_WIDTH - ENEMY_WIDTH)
