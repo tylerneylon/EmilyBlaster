@@ -296,11 +296,11 @@ class Poem(pygame.sprite.Sprite):
 
         # Initially render to a buffer image that we can make translucent.
         buff = pygame.Surface((w, h), pygame.SRCALPHA)
-        pygame.draw.rect(buff, (255, 255, 255, 64), (0, 0, w, h), border_radius=p)
+        pygame.draw.rect(buff, (128, 128, 128, 70), (0, 0, w, h), border_radius=p)
         self.render_rich_text(buff, poem, [BLACK] * n, 255, (p + 2, p    ))
         self.render_rich_text(buff, poem, [WHITE] * n, 255, (p    , p + 2))
         self.render_rich_text(buff, poem, [GRAY]  * n, 255, (p + 1, p + 1))
-        buff.set_alpha(128)
+        buff.set_alpha(140)
 
         self.image.blit(buff, (0, 0))
 
@@ -369,12 +369,16 @@ class Poem(pygame.sprite.Sprite):
         return w, h
 
     def highlight_word_idx(self, word_idx):
-        word_colors = [TRANSPARENT] * self.n
-        word_colors[word_idx] = WHITE
-        p = self.padding
-        self.render_rich_text(
-                self.image, self.poem, word_colors, 255, (p + 1, p + 1)
-        )
+        main_color = (200, 190, 185)
+        for i, w_color in enumerate([BLACK, BLACK, main_color]):
+            j = (i + 2) % 3
+            word_colors = [TRANSPARENT] * self.n
+            word_colors[word_idx] = w_color
+            p = self.padding
+            x, y = p + j, p + 2 - j
+            self.render_rich_text(
+                    self.image, self.poem, word_colors, 255, (x, y)
+            )
 
 
 # ______________________________________________________________________
