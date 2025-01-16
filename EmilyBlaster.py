@@ -37,8 +37,8 @@ PLAYER_WIDTH = 50
 PLAYER_HEIGHT = 10
 PLAYER_SPEED = 7
 
-BULLET_WIDTH = 5
-BULLET_HEIGHT = 10
+BULLET_WIDTH = 9
+BULLET_HEIGHT = 13
 BULLET_SPEED = 10
 
 ENEMY_WIDTH = 40
@@ -125,8 +125,21 @@ class Player(pygame.sprite.Sprite):
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
-        self.image = pygame.Surface((BULLET_WIDTH, BULLET_HEIGHT))
-        self.image.fill(WHITE)
+        w, h = BULLET_WIDTH, BULLET_HEIGHT
+        self.image = pygame.Surface((w, h), pygame.SRCALPHA)
+        
+        pad = 2
+        pygame.draw.rect(
+                self.image, WHITE,
+                (0, 0, w, h),
+                border_radius=3
+        )
+        pygame.draw.rect(
+                self.image, BLACK,
+                (pad, pad, w - 2 * pad, h - 2 * pad),
+                border_radius=3
+        )
+
         self.rect = self.image.get_rect()
         self.rect.centerx = x
         self.rect.bottom = y
