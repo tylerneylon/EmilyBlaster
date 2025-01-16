@@ -150,6 +150,18 @@ class Bullet(pygame.sprite.Sprite):
         if self.rect.bottom < 0:
             self.kill()
 
+class Blotch(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        ''' x, y are the center coordinates. '''
+        super().__init__()
+        self.image = pygame.image.load('ink_blotch_2.png')
+        self.image = pygame.transform.rotate(
+                self.image, random.randint(-50, 50)
+        )
+        self.rect = self.image.get_rect()
+        self.rect.centerx = x
+        self.rect.centery = y
+
 TOP_MARGIN = 35
 BOTTOM_MARGIN = 100
 
@@ -401,6 +413,7 @@ class Poem(pygame.sprite.Sprite):
 player = Player()
 bullets = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
+blotches = pygame.sprite.Group()
 poem = Poem(poem1, delta_x=-150)
 
 word_paths = WordPaths(poem1)
@@ -412,7 +425,6 @@ for i, s in enumerate(word_paths.substrings):
     enemies.add(enemy)
 
 all_sprites = pygame.sprite.Group()
-all_sprites.add(poem)
 all_sprites.add(player)
 all_sprites.add(enemies)
 
@@ -442,9 +454,11 @@ while running:
     hits = pygame.sprite.groupcollide(enemies, bullets, True, True)
     if len(hits) > 0:
         splat.play()
-    for hit in hits:
+    gone_bullets = set()
+    for hit, bullet_list in hits.items():
         score += 1
         poem.highlight_word_idx(hit.tile_idx)
+        gone_bullets |= set(bullet_list)
         if False:
             # Spawn a new enemy at a random position
             x = random.randint(0, SCREEN_WIDTH - ENEMY_WIDTH)
@@ -452,11 +466,17 @@ while running:
             enemy = Enemy(x, y)
             enemies.add(enemy)
             all_sprites.add(enemy)
+    for b in gone_bullets:
+        x, y = b.rect.centerx, b.rect.centery
+        blotch = Blotch(b.rect.centerx, b.rect.centery)
+        blotches.add(blotch)
 
     # Draw everything
     bg_x = (SCREEN_WIDTH - background_image.get_width()) // 2
     bg_y = (SCREEN_HEIGHT - background_image.get_height()) // 2
     screen.blit(background_image, (bg_x, bg_y))
+    screen.blit(poem.image, poem.rect)
+    blotches.draw(screen)
     all_sprites.draw(screen)
 
     # Draw score
