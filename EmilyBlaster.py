@@ -161,6 +161,21 @@ class Blotch(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.centerx = x
         self.rect.centery = y
+        self.start = pygame.time.get_ticks()
+        self.last_t = self.start
+
+    def update(self):
+
+        blotch_duration = 0.5
+        now = pygame.time.get_ticks()
+
+        # age goes from 0 up to 1 and stops at 1.
+        age = min(1, (now - self.start) / 1000 / blotch_duration)
+        alpha = 255 * (1 - age)
+        self.image.set_alpha(alpha)
+
+        # This is a cumulative drop, so it looks a little like gravity.
+        self.rect.y += age * 2
 
 TOP_MARGIN = 35
 BOTTOM_MARGIN = 100
@@ -449,6 +464,7 @@ while running:
 
     # Update sprites
     all_sprites.update()
+    blotches.update()
 
     # Check for collisions
     hits = pygame.sprite.groupcollide(enemies, bullets, True, True)
