@@ -76,8 +76,10 @@ fullscreen = '--fullscreen' in sys.argv
 # Initialize pygame
 pygame.init()
 pygame.joystick.init()
-joystick = pygame.joystick.Joystick(0)
-joystick.init()
+joystick = None
+if pygame.joystick.get_count() > 0:
+    joystick = pygame.joystick.Joystick(0)
+    joystick.init()
 
 # Set up the screen, caption, and audio mixer.
 if fullscreen:
@@ -149,7 +151,9 @@ class Player(pygame.sprite.Sprite):
 
         # They can play with either the joystick or the keyboard.
         # If we detect joystick movement, that overrides the keyboard.
-        left_x = skip_if_dead(joystick.get_axis(AXIS_LEFT_X))
+        left_x = 0
+        if joystick:
+            left_x = skip_if_dead(joystick.get_axis(AXIS_LEFT_X))
         if left_x != 0:
             self.speed_x = left_x * PLAYER_SPEED
         else:
