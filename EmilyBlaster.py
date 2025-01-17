@@ -67,7 +67,11 @@ pygame.init()
 if fullscreen:
     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN | pygame.DOUBLEBUF, vsync=True)
     SCREEN_WIDTH, SCREEN_HEIGHT = screen.get_size()
-    scale_up = min(SCREEN_WIDTH / 768, SCREEN_HEIGHT / 1024)
+    sw = SCREEN_WIDTH  / 768
+    sh = SCREEN_HEIGHT / 1024
+    a, b = min(sw, sh), max(sw, sh)
+    a_weight = 0.75
+    scale_up = a_weight * a + (1 - a_weight) * b
 else:
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.DOUBLEBUF, vsync=True)
     scale_up = 1
