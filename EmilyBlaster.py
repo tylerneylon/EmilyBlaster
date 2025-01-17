@@ -46,6 +46,11 @@ ENEMY_WIDTH = 40
 ENEMY_HEIGHT = 20
 NUM_ENEMIES = 8
 
+# Constants for deadzone and axis indices
+DEADZONE = 0.2  # Adjust the deadzone as needed
+AXIS_LEFT_X = 0
+AXIS_LEFT_Y = 1
+
 # Some poetry
 # I plan to later put this into a separate file.
 poem1 = '''Because I could not stop for Death -
@@ -55,6 +60,14 @@ And Immortality.'''
 
 
 # ______________________________________________________________________
+# Convenience functions
+
+def skip_if_dead(joystick_pos):
+    if abs(joystick_pos) < DEADZONE:
+        return 0
+    return joystick_pos
+
+# ______________________________________________________________________
 # Initialization
 
 # Parse command-line arguments
@@ -62,6 +75,9 @@ fullscreen = '--fullscreen' in sys.argv
 
 # Initialize pygame
 pygame.init()
+pygame.joystick.init()
+joystick = pygame.joystick.Joystick(0)
+joystick.init()
 
 # Set up the screen, caption, and audio mixer.
 if fullscreen:
@@ -130,10 +146,17 @@ class Player(pygame.sprite.Sprite):
     def update(self):
         keys = pygame.key.get_pressed()
         self.speed_x = 0
-        if keys[pygame.K_LEFT]:
-            self.speed_x = -PLAYER_SPEED
-        if keys[pygame.K_RIGHT]:
-            self.speed_x = PLAYER_SPEED
+
+        # They can play with either the joystick or the keyboard.
+        # If we detect joystick movement, that overrides the keyboard.
+        left_x = skip_if_dead(joystick.get_axis(AXIS_LEFT_X))
+        if left_x != 0:
+            self.speed_x = left_x * PLAYER_SPEED
+        else:
+            if keys[pygame.K_LEFT]:
+                self.speed_x = -PLAYER_SPEED
+            if keys[pygame.K_RIGHT]:
+                self.speed_x = PLAYER_SPEED
         self.rect.x += self.speed_x
         # Prevent player from going off screen
         if self.rect.left < self.min_x:
@@ -465,6 +488,13 @@ running = True
 score = 0
 font = pygame.font.SysFont(None, 36)
 
+def shoot_bullet():
+    bullet = Bullet(
+            player.rect.centerx + screen_scale(60), player.rect.top
+    )
+    all_sprites.add(bullet)
+    bullets.add(bullet)
+
 while running:
     clock.tick(60)
 
@@ -474,12 +504,10 @@ while running:
             running = False
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
-                # Shoot bullet
-                bullet = Bullet(
-                        player.rect.centerx + screen_scale(60), player.rect.top
-                )
-                all_sprites.add(bullet)
-                bullets.add(bullet)
+                shoot_bullet()
+        elif event.type == pygame.JOYBUTTONDOWN:
+            if event.button == 0:
+                shoot_bullet()
 
     # Update sprites
     all_sprites.update()
