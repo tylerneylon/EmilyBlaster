@@ -520,5 +520,6 @@ while running:
 
     # Refresh display
     pygame.display.flip()
+    pygame.mouse.set_visible(False)
 
 pygame.quit()
