@@ -230,7 +230,7 @@ class Blotch(pygame.sprite.Sprite):
 class WordPaths:
     def __init__(self, poem):
         self.poem = poem
-        self.substrings = self._breakdown_poem()
+        self.substrings = get_substrings_of_text(poem)
 
         # Determine the path metrics.
         widest_tile = self._compute_widest_tile()
@@ -252,14 +252,6 @@ class WordPaths:
             self.tile_widths.append(r.width)
             widest = max(widest, r.width)
         return widest
-
-    def _breakdown_poem(self):
-        lines = self.poem.split('\n')
-        return [
-                word
-                for line in lines
-                for word in line.split()
-        ]
 
     def _determine_paths(self, widest_tile, row_skip, top_path_y):
         self.paths = []
@@ -358,6 +350,23 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.x = x
         self.rect.y = y
 
+def get_substrings_of_text(text, do_include_newlines=False):
+    split = []
+    for line in text.split('\n'):
+        split.extend(line.split())
+        if do_include_newlines:
+            split.append('\n')
+    to_join = [
+            i
+            for i, w in enumerate(split)
+            if len(w) == 1 and w != '\n'
+    ]
+    for i in reversed(to_join):
+        new = split[i - 1] + ' ' + split[i]
+        del split[i]
+        split[i - 1] = new
+    return split
+
 class Poem(pygame.sprite.Sprite):
     def __init__(self, poem, delta_x=0):
         super().__init__()
@@ -366,7 +375,7 @@ class Poem(pygame.sprite.Sprite):
         p = self.padding = screen_scale(10)
 
         # Quietly render the text just to learn the sizing.
-        self.n = n = self._get_num_words(poem)
+        self.n = n = len(get_substrings_of_text(poem))
         buff = pygame.Surface((0, 0), pygame.SRCALPHA)
         self.render_rich_text(buff, poem, [WHITE] * n, 255, (0, 0), do_blit=False)
         w, h = self.text_w, self.text_h
@@ -390,13 +399,6 @@ class Poem(pygame.sprite.Sprite):
 
         self.poem = poem
 
-    def _get_num_words(self, poem):
-        return len([
-            w
-            for line in poem
-            for w in line.split()
-        ])
-
     def render_string(self, s, color, alpha, pos):
         text_surface = main_font.render(s, False, color)
         text_surface.set_alpha(alpha)
@@ -409,8 +411,12 @@ class Poem(pygame.sprite.Sprite):
         w_idx = 0
         pos = list(position)
         w, h = 0, 0
-        for line in lines:
-            for word in line.split():
+        for word in get_substrings_of_text(text, True):
+            if word == '\n':
+                h = max(h, pos[1] + text_surface.get_height())
+                pos[0] = position[0]
+                pos[1] += text_surface.get_height() + self.interline_skip
+            else:
                 color = word_colors[w_idx]
                 text_surface = main_font.render(word, False, color)
                 text_surface.set_alpha(alpha)
@@ -420,9 +426,6 @@ class Poem(pygame.sprite.Sprite):
                 w_idx += 1
                 w = max(w, pos[0] + text_surface.get_width())
                 pos[0] += text_surface.get_width() + 10
-            h = max(h, pos[1] + text_surface.get_height())
-            pos[0] = position[0]
-            pos[1] += text_surface.get_height() + self.interline_skip
         self.text_w = w
         self.text_h = h
 
