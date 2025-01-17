@@ -11,6 +11,7 @@
 
 import math
 import random
+import sys
 
 import pygame
 
@@ -43,7 +44,6 @@ BULLET_SPEED = 10
 
 ENEMY_WIDTH = 40
 ENEMY_HEIGHT = 20
-ENEMY_SPEED = 2
 NUM_ENEMIES = 8
 
 # Some poetry
@@ -57,19 +57,34 @@ And Immortality.'''
 # ______________________________________________________________________
 # Initialization
 
+# Parse command-line arguments
+fullscreen = '--fullscreen' in sys.argv
+
 # Initialize pygame
 pygame.init()
 
-# Load font
-font_path = 'dogicapixel.ttf'
-main_font = pygame.font.Font(font_path, 20)
-screen = pygame.display.set_mode(
-        (SCREEN_WIDTH, SCREEN_HEIGHT),
-        pygame.DOUBLEBUF,
-        vsync=True
-)
+# Set up the screen, caption, and audio mixer.
+if fullscreen:
+    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN | pygame.DOUBLEBUF, vsync=True)
+    SCREEN_WIDTH, SCREEN_HEIGHT = screen.get_size()
+    scale_up = min(SCREEN_WIDTH / 768, SCREEN_HEIGHT / 1024)
+else:
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.DOUBLEBUF, vsync=True)
+    scale_up = 1
 pygame.display.set_caption('EmilyBlaster')
 pygame.mixer.init()
+
+# Define a convenience function to help us scale to the current screen size.
+def screen_scale(x):
+    return int(x * scale_up)
+
+# Adjust any speeds as needed for the screen size.
+BULLET_SPEED = screen_scale(BULLET_SPEED)
+PLAYER_SPEED = screen_scale(PLAYER_SPEED)
+
+# Load font
+font_path = 'dogicapixel.ttf'
+main_font = pygame.font.Font(font_path, screen_scale(20))
 
 # Clock for FPS control
 clock = pygame.time.Clock()
@@ -93,6 +108,7 @@ class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
         self.image = pygame.image.load('quill.png').convert_alpha()
+        self.image = pygame.transform.scale_by(self.image, 1.2 * scale_up)
         # self.image = pygame.Surface((PLAYER_WIDTH, PLAYER_HEIGHT))
         # self.image.fill(GREEN)
         self.rect = self.image.get_rect()
@@ -125,19 +141,20 @@ class Player(pygame.sprite.Sprite):
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
-        w, h = BULLET_WIDTH, BULLET_HEIGHT
+        w, h = screen_scale(BULLET_WIDTH), screen_scale(BULLET_HEIGHT)
         self.image = pygame.Surface((w, h), pygame.SRCALPHA)
         
-        pad = 2
+        pad    = screen_scale(2)
+        radius = screen_scale(3)
         pygame.draw.rect(
                 self.image, WHITE,
                 (0, 0, w, h),
-                border_radius=3
+                border_radius=radius
         )
         pygame.draw.rect(
                 self.image, BLACK,
                 (pad, pad, w - 2 * pad, h - 2 * pad),
-                border_radius=3
+                border_radius=radius
         )
 
         self.rect = self.image.get_rect()
@@ -155,6 +172,7 @@ class Blotch(pygame.sprite.Sprite):
         ''' x, y are the center coordinates. '''
         super().__init__()
         self.image = pygame.image.load('ink_blotch_2.png')
+        self.image = pygame.transform.scale_by(self.image, scale_up)
         self.image = pygame.transform.rotate(
                 self.image, random.randint(-50, 50)
         )
@@ -176,9 +194,6 @@ class Blotch(pygame.sprite.Sprite):
 
         # This is a cumulative drop, so it looks a little like gravity.
         self.rect.y += age * 2
-
-TOP_MARGIN = 35
-BOTTOM_MARGIN = 100
 
 # A class to assist with word tile movements
 class WordPaths:
@@ -268,8 +283,7 @@ class WordPaths:
 
     def get_tile_pos(self, tile_idx, t):
         ''' Return the top-left x, y coordinates of the given tile. '''
-        speed = 170  # This is in pixels per second.
-        speed = 300
+        speed = screen_scale(300)  # This is in pixels per second.
         pos  = max(0, self.tile_start[tile_idx] + t / 1000 * speed)
         d    = 0
         path = self.paths[tile_idx % 2]
@@ -294,10 +308,10 @@ class Enemy(pygame.sprite.Sprite):
     def __init__(self, x, y, tile_idx, s):
         super().__init__()
         self.tile_idx = tile_idx
-        bg_nineslice = NineSlice('word_box_6.png', (52, 27), (55, 29))
+        bg_nineslice = NineSlice('word_box_6.png', (52, 27), (55, 29), scale_up)
         text_surface = main_font.render(s, True, (80, 60, 30))
         text_w, text_h = text_surface.get_width(), text_surface.get_height()
-        pad_w, pad_h = 40, 25
+        pad_w, pad_h = screen_scale(40), screen_scale(25)
         w = max(text_w + pad_w, bg_nineslice.minwidth)
         h = max(text_h + pad_h, bg_nineslice.minheight)
         self.image = pygame.Surface((w, h), pygame.SRCALPHA)
@@ -306,24 +320,19 @@ class Enemy(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-        self.speed_x = random.choice([-1, 1]) * ENEMY_SPEED
 
     def update(self):
         t = pygame.time.get_ticks()
         x, y = word_paths.get_tile_pos(self.tile_idx, t)
         self.rect.x = x
         self.rect.y = y
-        if False:
-            self.rect.x += self.speed_x
-            if self.rect.right > SCREEN_WIDTH or self.rect.left < 0:
-                self.speed_x *= -1
 
 class Poem(pygame.sprite.Sprite):
     def __init__(self, poem, delta_x=0):
         super().__init__()
 
-        self.interline_skip = 16
-        p = self.padding = 10
+        self.interline_skip = screen_scale(16)
+        p = self.padding = screen_scale(10)
 
         # Quietly render the text just to learn the sizing.
         self.n = n = self._get_num_words(poem)
@@ -429,8 +438,12 @@ player = Player()
 bullets = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
 blotches = pygame.sprite.Group()
-poem = Poem(poem1, delta_x=-150)
+delta_x=-300 + screen_scale(150)
+poem = Poem(poem1, delta_x=delta_x)
 
+# These margins are used by WordPaths.
+TOP_MARGIN = 35
+BOTTOM_MARGIN = player.rect.height
 word_paths = WordPaths(poem1)
 
 # Create enemies
@@ -458,7 +471,9 @@ while running:
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
                 # Shoot bullet
-                bullet = Bullet(player.rect.centerx + 49, player.rect.top)
+                bullet = Bullet(
+                        player.rect.centerx + screen_scale(60), player.rect.top
+                )
                 all_sprites.add(bullet)
                 bullets.add(bullet)
 

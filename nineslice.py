@@ -1,7 +1,7 @@
 import pygame
 
 class NineSlice:
-    def __init__(self, image_filename, top_left, bottom_right):
+    def __init__(self, image_filename, top_left, bottom_right, scale_by=1):
         """
         Initializes the NineSlice object.
         
@@ -12,6 +12,7 @@ class NineSlice:
         """
         # Load image with alpha support
         self.image = pygame.image.load(image_filename).convert_alpha()
+        self.image = pygame.transform.scale_by(self.image, scale_by)
 
         self.image_width = self.image.get_width()
         self.image_height = self.image.get_height()
@@ -22,6 +23,10 @@ class NineSlice:
         # Margins for slicing
         self.left, self.top = top_left
         self.right, self.bottom = bottom_right
+        self.left   = int(self.left   * scale_by)
+        self.right  = int(self.right  * scale_by)
+        self.top    = int(self.top    * scale_by)
+        self.bottom = int(self.bottom * scale_by)
 
         # For convenience, set the minimum width and height.
         self.minwidth  = self.image_width
