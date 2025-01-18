@@ -15,7 +15,9 @@ import sys
 
 import pygame
 
+import screen_setup
 from nineslice import NineSlice
+from screen_setup import screen_scale
 
 
 # ______________________________________________________________________
@@ -24,10 +26,6 @@ from nineslice import NineSlice
 # This can be any of:
 # 'playing' or 'between_quatrains'
 game_mode = 'playing'
-
-# Screen dimensions
-SCREEN_WIDTH  = 1024
-SCREEN_HEIGHT =  768
 
 # Colors
 WHITE = (255, 255, 255)
@@ -74,9 +72,6 @@ def skip_if_dead(joystick_pos):
 # ______________________________________________________________________
 # Initialization
 
-# Parse command-line arguments
-fullscreen = '--fullscreen' in sys.argv
-
 # Initialize pygame
 pygame.init()
 pygame.joystick.init()
@@ -86,23 +81,10 @@ if pygame.joystick.get_count() > 0:
     joystick.init()
 
 # Set up the screen, caption, and audio mixer.
-if fullscreen:
-    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN | pygame.DOUBLEBUF, vsync=True)
-    SCREEN_WIDTH, SCREEN_HEIGHT = screen.get_size()
-    sw = SCREEN_WIDTH  / 768
-    sh = SCREEN_HEIGHT / 1024
-    a, b = min(sw, sh), max(sw, sh)
-    a_weight = 0.75
-    scale_up = a_weight * a + (1 - a_weight) * b
-else:
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.DOUBLEBUF, vsync=True)
-    scale_up = 1
+screen, scale_up = screen_setup.init()
+screen_w, screen_h = screen_setup.screen_w, screen_setup.screen_h
 pygame.display.set_caption('EmilyBlaster')
 pygame.mixer.init()
-
-# Define a convenience function to help us scale to the current screen size.
-def screen_scale(x):
-    return int(x * scale_up)
 
 # Adjust any speeds as needed for the screen size.
 BULLET_SPEED = screen_scale(BULLET_SPEED)
@@ -119,7 +101,7 @@ clock = pygame.time.Clock()
 # Load and scale background image
 background_image = pygame.image.load('tombstone_bg.png')
 bg_width, bg_height = background_image.get_size()
-scale_factor = max(SCREEN_WIDTH / bg_width, SCREEN_HEIGHT / bg_height)
+scale_factor = max(screen_w / bg_width, screen_h / bg_height)
 new_size = (int(bg_width * scale_factor), int(bg_height * scale_factor))
 background_image = pygame.transform.scale(background_image, new_size)
 
@@ -140,15 +122,15 @@ class Player(pygame.sprite.Sprite):
         # self.image.fill(GREEN)
         self.rect = self.image.get_rect()
         # self.rect = self.image.get_rect()
-        # self.rect.centerx = SCREEN_WIDTH // 2
-        # self.rect.bottom = SCREEN_HEIGHT - 10
-        self.rect.top = SCREEN_HEIGHT - self.rect.height
-        self.rect.centerx = SCREEN_WIDTH // 2
+        # self.rect.centerx = screen_w // 2
+        # self.rect.bottom = screen_h - 10
+        self.rect.top = screen_h - self.rect.height
+        self.rect.centerx = screen_w // 2
         self.speed_x = 0
 
         # Allow player to go slightly off screen.
         self.min_x = -70
-        self.max_x = SCREEN_WIDTH + 10
+        self.max_x = screen_w + 10
 
     def update(self):
 
@@ -243,7 +225,7 @@ class WordPaths:
 
         # Determine the path metrics.
         widest_tile = self._compute_widest_tile()
-        row_skip = (SCREEN_HEIGHT - TOP_MARGIN - BOTTOM_MARGIN) // 11
+        row_skip = (screen_h - TOP_MARGIN - BOTTOM_MARGIN) // 11
         top_path_y = TOP_MARGIN + row_skip // 2
         self._determine_paths(widest_tile, row_skip, top_path_y)
 
@@ -264,7 +246,7 @@ class WordPaths:
 
     def _determine_paths(self, widest_tile, row_skip, top_path_y):
         self.paths = []
-        scr_w = SCREEN_WIDTH
+        scr_w = screen_w
         w = widest_tile // 2
         for path_idx in range(2):
 
@@ -410,8 +392,8 @@ class Poem(pygame.sprite.Sprite):
         self.image.blit(buff, (0, 0))
 
         self.rect = self.image.get_rect()
-        self.rect.centerx = SCREEN_WIDTH // 2 + delta_x
-        self.rect.centery = SCREEN_HEIGHT // 2
+        self.rect.centerx = screen_w // 2 + delta_x
+        self.rect.centery = screen_h // 2
 
         self.poem = poem
 
@@ -525,6 +507,8 @@ while running:
         # Switch to between_quatrains mode.
         game_mode = 'between_quatrains'
         print('Mode switched')
+        msg = Message('Quatrain Complete', 'Continue >', 500, 500)
+        all_sprites.add(msg)
 
     # Check for quit event
     for event in pygame.event.get():
@@ -558,7 +542,7 @@ while running:
         gone_bullets |= set(bullet_list)
         if False:
             # Spawn a new enemy at a random position
-            x = random.randint(0, SCREEN_WIDTH - ENEMY_WIDTH)
+            x = random.randint(0, screen_w - ENEMY_WIDTH)
             y = random.randint(20, 200)
             enemy = Enemy(x, y)
             enemies.add(enemy)
@@ -569,8 +553,8 @@ while running:
         blotches.add(blotch)
 
     # Draw everything
-    bg_x = (SCREEN_WIDTH - background_image.get_width()) // 2
-    bg_y = (SCREEN_HEIGHT - background_image.get_height()) // 2
+    bg_x = (screen_w - background_image.get_width()) // 2
+    bg_y = (screen_h - background_image.get_height()) // 2
     screen.blit(background_image, (bg_x, bg_y))
     screen.blit(poem.image, poem.rect)
     blotches.draw(screen)
