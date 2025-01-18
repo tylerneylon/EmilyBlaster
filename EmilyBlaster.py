@@ -21,6 +21,10 @@ from nineslice import NineSlice
 # ______________________________________________________________________
 # Globals and constants
 
+# This can be any of:
+# 'playing' or 'between_quatrains'
+game_mode = 'playing'
+
 # Screen dimensions
 SCREEN_WIDTH  = 1024
 SCREEN_HEIGHT =  768
@@ -107,6 +111,7 @@ PLAYER_SPEED = screen_scale(PLAYER_SPEED)
 # Load font
 font_path = 'dogicapixel.ttf'
 main_font = pygame.font.Font(font_path, screen_scale(20))
+nice_font = pygame.font.Font('alagard.ttf', screen_scale(30))
 
 # Clock for FPS control
 clock = pygame.time.Clock()
@@ -146,6 +151,10 @@ class Player(pygame.sprite.Sprite):
         self.max_x = SCREEN_WIDTH + 10
 
     def update(self):
+
+        if game_mode != 'playing':
+            return
+
         keys = pygame.key.get_pressed()
         self.speed_x = 0
 
@@ -305,7 +314,12 @@ class WordPaths:
             prev_w[idx] = width
 
     def get_tile_pos(self, tile_idx, t):
-        ''' Return the top-left x, y coordinates of the given tile. '''
+        ''' This returns (x, y, is_done) for the given tile at time `t`;
+            the time is expected to be measured in milliseconds, as is returned
+            by pygame.time.get_ticks(). x, y are the assigned top-left
+            coordinates of the given tile. is_done is True as soon as the tile
+            has reached its final position, and remains True thereafter.
+        '''
         speed = screen_scale(300)  # This is in pixels per second.
         pos  = max(0, self.tile_start[tile_idx] + t / 1000 * speed)
         d    = 0
@@ -318,13 +332,13 @@ class WordPaths:
                 perc = (pos - d) / dist
                 x += (x2 - x) * perc
                 y += (y2 - y) * perc
-                return x + dx, y + dy
+                return x + dx, y + dy, False
             d += dist
             x, y = x2, y2
         # If we get here, then the tile is off the screen.
         # We'll return the path's final endpoint.
         x, y = path[-1]
-        return x + dx, y + dy
+        return x + dx, y + dy, True
 
 # Enemy class
 class Enemy(pygame.sprite.Sprite):
@@ -346,9 +360,11 @@ class Enemy(pygame.sprite.Sprite):
 
     def update(self):
         t = pygame.time.get_ticks()
-        x, y = word_paths.get_tile_pos(self.tile_idx, t)
+        x, y, is_done = word_paths.get_tile_pos(self.tile_idx, t)
         self.rect.x = x
         self.rect.y = y
+        if is_done:
+            self.kill()
 
 def get_substrings_of_text(text, do_include_newlines=False):
     split = []
@@ -482,7 +498,7 @@ word_paths = WordPaths(poem1)
 
 # Create enemies
 for i, s in enumerate(word_paths.substrings):
-    x, y = word_paths.get_tile_pos(i, 0)
+    x, y, _ = word_paths.get_tile_pos(i, 0)
     enemy = Enemy(x, y, i, s)
     enemies.add(enemy)
 
@@ -505,16 +521,27 @@ def shoot_bullet():
 while running:
     clock.tick(60)
 
+    if game_mode == 'playing' and len(enemies) == 0:
+        # Switch to between_quatrains mode.
+        game_mode = 'between_quatrains'
+        print('Mode switched')
+
     # Check for quit event
     for event in pygame.event.get():
+
+        # Handle universal events.
         if event.type == pygame.QUIT:
             running = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                shoot_bullet()
-        elif event.type == pygame.JOYBUTTONDOWN:
-            if event.button == 0:
-                shoot_bullet()
+            break
+
+        # Handle events per game mode.
+        if game_mode == 'playing':
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    shoot_bullet()
+            elif event.type == pygame.JOYBUTTONDOWN:
+                if event.button == 0:
+                    shoot_bullet()
 
     # Update sprites
     all_sprites.update()
