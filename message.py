@@ -14,7 +14,7 @@ from screen_setup import screen_scale
 # Public interface
 
 class Message(pygame.sprite.Sprite):
-    def __init__(self, title, text, x, y):
+    def __init__(self, title, text, x, y, hide_text=False):
         super().__init__()
 
         scale_by = screen_setup.scale_up
@@ -35,8 +35,17 @@ class Message(pygame.sprite.Sprite):
         self.image = pygame.Surface((w, h), pygame.SRCALPHA)
         msg_box.draw(self.image, 0, 0, w, h)
         self.image.blit(title_srf, ((w - title_w) // 2, pad_h))
-        self.image.blit(text_srf, ((w - text_w) // 2, pad_h + text_h + v_skip))
+        if not hide_text:
+            self.image.blit(text_srf, ((w - text_w) // 2, pad_h + title_h + v_skip))
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
+
+        # Save text_srf to support the show_text() method.
+        self.text_srf = text_srf
+        self.text_x = (w - text_w) // 2
+        self.text_y = pad_h + title_h + v_skip
+
+    def show_text(self):
+        self.image.blit(self.text_srf, (self.text_x, self.text_y))
 

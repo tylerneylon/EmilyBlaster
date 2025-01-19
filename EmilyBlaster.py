@@ -18,6 +18,7 @@ import sys
 import pygame
 
 # Local imports
+import anim
 import fonts
 import screen_setup
 from message import Message
@@ -72,7 +73,7 @@ And Immortality.''',
 '''One time I saw a ducker -
 Twas a lovely sight to see
 Till it came and bit me
-And I said you birdy plucker.'''
+Then I said you birdy plucker.'''
 ]
 
 poem2 = ["I_farted!", "You_farted!"]
@@ -537,23 +538,31 @@ def shoot_bullet():
 # Mode-switching functions
 
 def switch_to_between_quatrains():
-    global game_mode, msg
+    global game_mode, msg, next_q_is_ready
     game_mode = 'between_quatrains'
     debug_print('Mode:', game_mode)
     msg = Message(
             f'Quatrain {current_quatrain} Complete',
             'Continue >',
             screen_scale(630),
-            screen_scale(475)
+            screen_scale(475),
+            hide_text=True
     )
+    next_q_is_ready = False
     all_sprites.add(msg)
+
+    def enable_continue():
+        global next_q_is_ready
+        msg.show_text()
+        next_q_is_ready = True
+
+    anim.call_after_delay(enable_continue, delay_seconds=2)
 
 def start_next_quatrain():
     global game_mode, msg, word_paths, current_quatrain, poem
     game_mode = 'playing'
     debug_print('Mode:', game_mode)
     msg.kill()
-    msg = None
 
     quatrain = cur_poem[current_quatrain]
     current_quatrain += 1
@@ -569,6 +578,7 @@ def start_next_quatrain():
 
 while running:
     clock.tick(60)
+    anim.handle_anim_events()
 
     if game_mode == 'playing' and len(enemies) == 0:
         switch_to_between_quatrains()
@@ -590,11 +600,13 @@ while running:
                 if event.button == 0:
                     shoot_bullet()
         elif game_mode == 'between_quatrains':
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RETURN:
-                    start_next_quatrain()
-            elif event.type == pygame.JOYBUTTONDOWN:
-                pass  # TODO
+            if next_q_is_ready:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:
+                        start_next_quatrain()
+                elif event.type == pygame.JOYBUTTONDOWN:
+                    if event.button == 0:
+                        start_next_quatrain()
 
     # Update sprites
     all_sprites.update()
