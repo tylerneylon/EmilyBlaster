@@ -24,3 +24,7 @@ def init():
         return
     main_font = pygame.font.Font('dogicapixel.ttf', screen_scale(20))
     nice_font = pygame.font.Font('alagard.ttf', screen_scale(30))
+
+def make_text_surface(font, text, color=(255, 255, 255)):
+    ts = font.render(text, False, color)
+    return ts, ts.get_width(), ts.get_height()

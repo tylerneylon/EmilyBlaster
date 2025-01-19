@@ -32,6 +32,8 @@ from screen_setup import screen_scale
 # 'playing' or 'between_quatrains'
 game_mode = 'playing'
 
+current_quatrain = 1
+
 # Colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -65,7 +67,7 @@ He kindly stopped for me -
 The Carriage held but just Ourselves -
 And Immortality.'''
 
-poem2 = "I farted!"
+poem2 = "I_farted!"
 
 start_poem = poem2
 
@@ -514,8 +516,12 @@ while running:
     if game_mode == 'playing' and len(enemies) == 0:
         # Switch to between_quatrains mode.
         game_mode = 'between_quatrains'
-        print('Mode switched')
-        msg = Message('Quatrain Complete', 'Continue >', 500, 500)
+        msg = Message(
+                f'Quatrain {current_quatrain} Complete',
+                'Continue >',
+                500,
+                400
+        )
         all_sprites.add(msg)
 
     # Check for quit event
