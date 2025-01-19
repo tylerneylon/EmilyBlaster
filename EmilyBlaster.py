@@ -34,6 +34,8 @@ game_mode = 'playing'
 
 current_quatrain = 1
 
+DO_DEBUG_PRINTS = ('--debug' in sys.argv)
+
 # Colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -62,14 +64,21 @@ AXIS_LEFT_Y = 1
 
 # Some poetry
 # I plan to later put this into a separate file.
-poem1 = '''Because I could not stop for Death -
+poem1 = [
+'''Because I could not stop for Death -
 He kindly stopped for me -
 The Carriage held but just Ourselves -
-And Immortality.'''
+And Immortality.''',
+'''One time I saw a ducker -
+Twas a lovely sight to see
+Till it came and bit me
+And I said you birdy plucker.'''
+]
 
-poem2 = "I_farted!"
+poem2 = ["I_farted!", "You_farted!"]
 
-start_poem = poem2
+cur_poem = poem1
+quatrain = cur_poem[0]
 
 
 # ______________________________________________________________________
@@ -79,6 +88,11 @@ def skip_if_dead(joystick_pos):
     if abs(joystick_pos) < DEADZONE:
         return 0
     return joystick_pos
+
+def debug_print(*s):
+    if not DO_DEBUG_PRINTS:
+        return
+    print(*s)
 
 # ______________________________________________________________________
 # Initialization
@@ -230,6 +244,8 @@ class Blotch(pygame.sprite.Sprite):
 # A class to assist with word tile movements
 class WordPaths:
     def __init__(self, poem):
+        self.speed = screen_scale(300)  # This is in pixels per second.
+
         self.poem = poem
         self.substrings = get_substrings_of_text(poem)
 
@@ -296,7 +312,8 @@ class WordPaths:
         ''' This will set up the self.tile_start[] list. '''
         pad = 60
         self.tile_start = []
-        t = [0, 0]
+        init_time = pygame.time.get_ticks() / 1000 * self.speed
+        t = [-init_time, -init_time]
         prev_w = [0, 0]
         for i, width in enumerate(self.tile_widths):
             idx = i % 2
@@ -312,8 +329,14 @@ class WordPaths:
             coordinates of the given tile. is_done is True as soon as the tile
             has reached its final position, and remains True thereafter.
         '''
-        speed = screen_scale(300)  # This is in pixels per second.
-        pos  = max(0, self.tile_start[tile_idx] + t / 1000 * speed)
+        pos  = max(0, self.tile_start[tile_idx] + t / 1000 * self.speed)
+        if False:
+            if random.randint(1, 8) == 1:
+                print('_' * 100)
+                print('tile_start:', self.tile_start[tile_idx])
+                print('speed-adjusted time:', t / 1000 * self.speed)
+                print('raw pos:', self.tile_start[tile_idx] + t / 1000 * self.speed)
+                print('pos', pos)
         d    = 0
         path = self.paths[tile_idx % 2]
         x, y = path[0]
@@ -481,12 +504,12 @@ bullets = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
 blotches = pygame.sprite.Group()
 delta_x=-300 + screen_scale(150)
-poem = Poem(start_poem, delta_x=delta_x)
+poem = Poem(quatrain, delta_x=delta_x)
 
 # These margins are used by WordPaths.
 TOP_MARGIN = 35
 BOTTOM_MARGIN = player.rect.height
-word_paths = WordPaths(start_poem)
+word_paths = WordPaths(quatrain)
 
 # Create enemies
 for i, s in enumerate(word_paths.substrings):
@@ -510,19 +533,45 @@ def shoot_bullet():
     all_sprites.add(bullet)
     bullets.add(bullet)
 
+# ______________________________________________________________________
+# Mode-switching functions
+
+def switch_to_between_quatrains():
+    global game_mode, msg
+    game_mode = 'between_quatrains'
+    debug_print('Mode:', game_mode)
+    msg = Message(
+            f'Quatrain {current_quatrain} Complete',
+            'Continue >',
+            630,
+            475
+    )
+    all_sprites.add(msg)
+
+def start_next_quatrain():
+    global game_mode, msg, word_paths, current_quatrain, poem
+    game_mode = 'playing'
+    debug_print('Mode:', game_mode)
+    msg.kill()
+    msg = None
+
+    quatrain = cur_poem[current_quatrain]
+    current_quatrain += 1
+
+    word_paths = WordPaths(quatrain)
+    for i, s in enumerate(word_paths.substrings):
+        x, y, _ = word_paths.get_tile_pos(i, 0)
+        enemy = Enemy(x, y, i, s)
+        enemies.add(enemy)
+        all_sprites.add(enemy)
+
+    poem = Poem(quatrain, delta_x=delta_x)
+
 while running:
     clock.tick(60)
 
     if game_mode == 'playing' and len(enemies) == 0:
-        # Switch to between_quatrains mode.
-        game_mode = 'between_quatrains'
-        msg = Message(
-                f'Quatrain {current_quatrain} Complete',
-                'Continue >',
-                500,
-                400
-        )
-        all_sprites.add(msg)
+        switch_to_between_quatrains()
 
     # Check for quit event
     for event in pygame.event.get():
@@ -540,6 +589,12 @@ while running:
             elif event.type == pygame.JOYBUTTONDOWN:
                 if event.button == 0:
                     shoot_bullet()
+        elif game_mode == 'between_quatrains':
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    start_next_quatrain()
+            elif event.type == pygame.JOYBUTTONDOWN:
+                pass  # TODO
 
     # Update sprites
     all_sprites.update()
