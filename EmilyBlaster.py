@@ -9,12 +9,16 @@
 # ______________________________________________________________________
 # Imports
 
+# Standard library imports
 import math
 import random
 import sys
 
+# Third party imports
 import pygame
 
+# Local imports
+import fonts
 import screen_setup
 from message import Message
 from nineslice import NineSlice
@@ -95,10 +99,9 @@ pygame.mixer.init()
 BULLET_SPEED = screen_scale(BULLET_SPEED)
 PLAYER_SPEED = screen_scale(PLAYER_SPEED)
 
-# Load font
-font_path = 'dogicapixel.ttf'
-main_font = pygame.font.Font(font_path, screen_scale(20))
-nice_font = pygame.font.Font('alagard.ttf', screen_scale(30))
+# Font initialization
+fonts.init()
+main_font, nice_font = fonts.main_font, fonts.nice_font
 
 # Clock for FPS control
 clock = pygame.time.Clock()
