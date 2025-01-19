@@ -16,6 +16,7 @@ import sys
 import pygame
 
 import screen_setup
+from message import Message
 from nineslice import NineSlice
 from screen_setup import screen_scale
 
@@ -59,6 +60,10 @@ poem1 = '''Because I could not stop for Death -
 He kindly stopped for me -
 The Carriage held but just Ourselves -
 And Immortality.'''
+
+poem2 = "I farted!"
+
+start_poem = poem2
 
 
 # ______________________________________________________________________
@@ -357,7 +362,7 @@ def get_substrings_of_text(text, do_include_newlines=False):
     to_join = [
             i
             for i, w in enumerate(split)
-            if len(w) == 1 and w != '\n'
+            if len(w) == 1 and w != '\n' and i > 0
     ]
     for i in reversed(to_join):
         new = split[i - 1] + ' ' + split[i]
@@ -471,12 +476,12 @@ bullets = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
 blotches = pygame.sprite.Group()
 delta_x=-300 + screen_scale(150)
-poem = Poem(poem1, delta_x=delta_x)
+poem = Poem(start_poem, delta_x=delta_x)
 
 # These margins are used by WordPaths.
 TOP_MARGIN = 35
 BOTTOM_MARGIN = player.rect.height
-word_paths = WordPaths(poem1)
+word_paths = WordPaths(start_poem)
 
 # Create enemies
 for i, s in enumerate(word_paths.substrings):
