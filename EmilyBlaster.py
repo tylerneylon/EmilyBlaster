@@ -543,8 +543,8 @@ def switch_to_between_quatrains():
     msg = Message(
             f'Quatrain {current_quatrain} Complete',
             'Continue >',
-            630,
-            475
+            screen_scale(630),
+            screen_scale(475)
     )
     all_sprites.add(msg)
 
