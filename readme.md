@@ -13,5 +13,6 @@
   and then I edited them. Thanks, Flux.
 * I used a font called [Dogica](https://www.dafont.com/dogica.font)
   by Roberto Mocci, who made the font available for
-  anyone to use. Sadie might say that Roberto's a real mensch (which is good, if
-  there's any doubt).
+  anyone to use.
+* I used another font called [Alagard](https://www.dafont.com/alagard.font) by
+  Hewett Tsoi, who made the font available for anyone to use.
