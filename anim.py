@@ -10,6 +10,8 @@
 import pygame
 import weakref
 
+import numpy as np
+
 
 # ______________________________________________________________________
 # Delayed-Call System
@@ -89,10 +91,22 @@ class AnimSprite(pygame.sprite.Sprite):
             else:
                 factor = 0.8 * (1 - (elapsed - half_cycle) / half_cycle)
 
+            # Create an overlay surface with the desired alpha.
             alpha = int(factor * 255)
-            # A quick way to do an overlay fill with alpha:
             overlay = pygame.Surface(self.image.get_size(), pygame.SRCALPHA)
             overlay.fill((255, 255, 255, alpha))
+
+            # Use the alpha mask from self.image.
+            alpha_mask = pygame.surfarray.pixels_alpha(self.image)
+            overlay_alpha = pygame.surfarray.pixels_alpha(overlay)
+            overlay_alpha[:] = (
+                    overlay_alpha * (alpha_mask.astype(np.float32) / 255)
+            ).astype(np.uint8)
+            # We need to delete these in order to unlock the surfaces.
+            del alpha_mask
+            del overlay_alpha
+
+            # Blit the overlay onto self.image
             self.image.blit(overlay, (0, 0))
 
             return True  # never finishes on its own

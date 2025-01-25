@@ -21,6 +21,7 @@ import pygame
 import anim
 import fonts
 import screen_setup
+from anim import AnimSprite
 from message import Message
 from nineslice import NineSlice
 from screen_setup import screen_scale
@@ -381,11 +382,15 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.x = x
         self.rect.y = y
 
+        # self.flashy = AnimSprite(self.image)
+        # self.flashy.start_flashing()
+
     def update(self):
         t = pygame.time.get_ticks()
         x, y, is_done = word_paths.get_tile_pos(self.tile_idx, t)
         self.rect.x = x
         self.rect.y = y
+        # self.image = self.flashy.image
         if is_done:
             self.kill()
 
