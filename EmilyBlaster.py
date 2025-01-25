@@ -66,14 +66,20 @@ AXIS_LEFT_Y = 1
 # Some poetry
 # I plan to later put this into a separate file.
 poem1 = [
-'''Because I could not stop for Death -
+
+'''
+Because I could not stop for Death -
 He kindly stopped for me -
 The Carriage held but just Ourselves -
-And Immortality.''',
-'''One time I saw a ducker -
-Twas a lovely sight to see
-Till it came and bit me
-Then I said you birdy plucker.'''
+And Immortality.
+''',
+
+'''
+We slowly drove – He knew no haste
+And I had put away
+My labor and my leisure too,
+For His Civility –
+'''
 ]
 
 poem2 = ["I_farted!", "You_farted!"]
@@ -246,6 +252,7 @@ class Blotch(pygame.sprite.Sprite):
 class WordPaths:
     def __init__(self, poem):
         self.speed = screen_scale(300)  # This is in pixels per second.
+        self.speed *= 4 ** (current_quatrain - 1)
 
         self.poem = poem
         self.substrings = get_substrings_of_text(poem)
@@ -385,7 +392,9 @@ class Enemy(pygame.sprite.Sprite):
 def get_substrings_of_text(text, do_include_newlines=False):
     split = []
     for line in text.split('\n'):
-        split.extend(line.split())
+        if len(line.strip()) == 0:
+            continue
+        split.extend(line.strip().split())
         if do_include_newlines:
             split.append('\n')
     to_join = [
@@ -439,7 +448,7 @@ class Poem(pygame.sprite.Sprite):
 
     def render_rich_text(
             self, dst, text, word_colors, alpha, position, do_blit=True):
-        lines = text.split('\n')
+        lines = [line for line in text.split('\n') if len(line.strip()) > 0]
         w_idx = 0
         pos = list(position)
         w, h = 0, 0
