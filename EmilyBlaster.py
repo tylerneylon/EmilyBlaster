@@ -44,6 +44,7 @@ BLACK = (0, 0, 0)
 GRAY  = (128, 128, 128)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
 TRANSPARENT = (0, 0, 0, 0)
 
 # Game settings
@@ -102,6 +103,28 @@ def debug_print(*s):
         return
     print(*s)
 
+def render_outlined_text(s):
+    '''Render text s to a new surface, outlined in white.'''
+
+    # Render the text to get the size.
+    text_surface = main_font.render(s, False, BLUE)
+    width, height = text_surface.get_size()
+
+    # Create a new surface with a transparent background.
+    surface = pygame.Surface((width + 2, height + 2), pygame.SRCALPHA)
+
+    # Render the white outline.
+    offsets = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+    for dx, dy in offsets:
+        outline_surface = main_font.render(s, False, WHITE)
+        surface.blit(outline_surface, (dx + 1, dy + 1))
+
+    # Render the text on top.
+    surface.blit(text_surface, (1, 1))
+
+    return surface
+
+
 # ______________________________________________________________________
 # Initialization
 
@@ -139,6 +162,9 @@ background_image = pygame.transform.scale(background_image, new_size)
 
 # Load sound effects
 splat = pygame.mixer.Sound('splat2.wav')
+
+# Load any persistent sprites or surfaces.
+plus_5 = render_outlined_text('+5')
 
 
 # ______________________________________________________________________
