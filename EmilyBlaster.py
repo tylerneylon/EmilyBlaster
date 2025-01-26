@@ -253,7 +253,7 @@ class Blotch(pygame.sprite.Sprite):
 class WordPaths:
     def __init__(self, poem):
         self.speed = screen_scale(300)  # This is in pixels per second.
-        self.speed *= 4 ** (current_quatrain - 1)
+        self.speed *= 1.1 ** (current_quatrain - 1)
 
         self.poem = poem
         self.substrings = get_substrings_of_text(poem)
@@ -378,19 +378,25 @@ class Enemy(pygame.sprite.Sprite):
         self.image = pygame.Surface((w, h), pygame.SRCALPHA)
         bg_nineslice.draw(self.image, 0, 0, w, h)
         self.image.blit(text_surface, ((w - text_w) // 2, (h - text_h) // 2))
+        self.flashy = AnimSprite(self.image)
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
+        self.is_next = False
 
         # self.flashy = AnimSprite(self.image)
         # self.flashy.start_flashing()
+
+    def make_next(self):
+        self.is_next = True
+        self.flashy.start_flashing()
 
     def update(self):
         t = pygame.time.get_ticks()
         x, y, is_done = word_paths.get_tile_pos(self.tile_idx, t)
         self.rect.x = x
         self.rect.y = y
-        # self.image = self.flashy.image
+        self.image = self.flashy.image
         if is_done:
             self.kill()
 
@@ -513,7 +519,8 @@ class Poem(pygame.sprite.Sprite):
 # ______________________________________________________________________
 # Main game code
 
-# Initialize sprites
+# Initialize sprites and track the next word tile
+next_word_idx = 0
 player = Player()
 bullets = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
@@ -526,11 +533,15 @@ TOP_MARGIN = 35
 BOTTOM_MARGIN = player.rect.height
 word_paths = WordPaths(quatrain)
 
-# Create enemies
+# Create enemies and initialize tiles_by_idx
+tiles_by_idx = {}
 for i, s in enumerate(word_paths.substrings):
     x, y, _ = word_paths.get_tile_pos(i, 0)
     enemy = Enemy(x, y, i, s)
     enemies.add(enemy)
+    tiles_by_idx[i] = enemy
+    if i == 0:
+        enemy.make_next()
 
 all_sprites = pygame.sprite.Group()
 all_sprites.add(player)
@@ -573,7 +584,7 @@ def switch_to_between_quatrains():
     anim.call_after_delay(enable_continue, delay_seconds=2)
 
 def start_next_quatrain():
-    global game_mode, msg, word_paths, current_quatrain, poem
+    global game_mode, msg, word_paths, current_quatrain, poem, tiles_by_idx
     game_mode = 'playing'
     debug_print('Mode:', game_mode)
     msg.kill()
@@ -581,12 +592,16 @@ def start_next_quatrain():
     quatrain = cur_poem[current_quatrain]
     current_quatrain += 1
 
+    tiles_by_idx = {}
     word_paths = WordPaths(quatrain)
     for i, s in enumerate(word_paths.substrings):
         x, y, _ = word_paths.get_tile_pos(i, 0)
         enemy = Enemy(x, y, i, s)
         enemies.add(enemy)
         all_sprites.add(enemy)
+        tiles_by_idx[i] = enemy
+        if i == 0:
+            enemy.make_next()
 
     poem = Poem(quatrain, delta_x=delta_x)
 
@@ -631,9 +646,15 @@ while running:
     if len(hits) > 0:
         splat.play()
     gone_bullets = set()
+    next_word_was_hit = False
     for hit, bullet_list in hits.items():
-        score += 1
+        if hit.is_next:
+            score += 5
+            next_word_was_hit = True
+        else:
+            score += 1
         poem.highlight_word_idx(hit.tile_idx)
+        del tiles_by_idx[hit.tile_idx]
         gone_bullets |= set(bullet_list)
         if False:
             # Spawn a new enemy at a random position
@@ -642,6 +663,14 @@ while running:
             enemy = Enemy(x, y)
             enemies.add(enemy)
             all_sprites.add(enemy)
+    if next_word_was_hit:
+        # Update next_word_idx to the next alive word
+        if len(tiles_by_idx) > 0:
+            next_enemy = min(
+                    tiles_by_idx.values(),
+                    key=lambda enemy: enemy.tile_idx
+            )
+            next_enemy.make_next()
     for b in gone_bullets:
         x, y = b.rect.centerx, b.rect.centery
         blotch = Blotch(b.rect.centerx, b.rect.centery)
