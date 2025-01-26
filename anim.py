@@ -56,7 +56,7 @@ class AnimSprite(pygame.sprite.Sprite):
         super().__init__()
         self.base_surface = base_surface
         self.image = self.base_surface.copy()
-        self.rect = self.image.get_rect()
+        self.base_rect = self.rect = self.image.get_rect()
 
         # A list of "chains." Each chain is a list of callables (animation fns).
         # On each frame, we call the first callable of each chain; if it returns
@@ -216,8 +216,9 @@ class AnimSprite(pygame.sprite.Sprite):
            - Call the first function in that chain.
            - If it returns False, pop it. If empty, remove the chain.
         """
+
         self.image = self.base_surface.copy()
-        self.rect = self.image.get_rect()
+        self.rect = self.base_rect
 
         # Iterate backwards so we can safely delete from fn_chains in-place.
         for i in reversed(range(len(self.fn_chains))):

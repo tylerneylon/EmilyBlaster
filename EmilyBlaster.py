@@ -555,13 +555,14 @@ class Poem(pygame.sprite.Sprite):
 # ______________________________________________________________________
 # Main game code
 
-# Initialize sprites and track the next word tile
+# Initialize sprite groups and track the next word tile
 next_word_idx = 0
 player = Player()
 bullets = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
 blotches = pygame.sprite.Group()
-delta_x=-300 + screen_scale(150)
+effect_sprites = pygame.sprite.Group()
+delta_x = -300 + screen_scale(150)
 poem = Poem(quatrain, delta_x=delta_x)
 
 # These margins are used by WordPaths.
@@ -686,6 +687,10 @@ while running:
         if hit.is_next:
             score += 5
             next_word_was_hit = True
+            # Create an AnimSprite for the "+5" effect
+            plus_5_sprite = AnimSprite(plus_5)
+            plus_5_sprite.base_rect.center = hit.rect.center
+            effect_sprites.add(plus_5_sprite)
         else:
             score += 1
         poem.highlight_word_idx(hit.tile_idx)
@@ -712,6 +717,7 @@ while running:
     screen.blit(background_image, (bg_x, bg_y))
     screen.blit(poem.image, poem.rect)
     blotches.draw(screen)
+    effect_sprites.draw(screen)
     all_sprites.draw(screen)
 
     # Draw score
