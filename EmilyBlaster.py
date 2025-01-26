@@ -398,7 +398,17 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.y = y
         self.image = self.flashy.image
         if is_done:
+            del tiles_by_idx[self.tile_idx]
+            if self.is_next:
+                update_next_word()
             self.kill()
+
+def update_next_word():
+    """Find and mark the next word tile as the next target."""
+    if len(tiles_by_idx) == 0:
+        return
+    next_enemy = min(tiles_by_idx.values(), key=lambda enemy: enemy.tile_idx)
+    next_enemy.make_next()
 
 def get_substrings_of_text(text, do_include_newlines=False):
     split = []
@@ -464,11 +474,7 @@ class Poem(pygame.sprite.Sprite):
         pos = list(position)
         w, h = 0, 0
         for word in get_substrings_of_text(text, True):
-            if word == '\n':
-                h = max(h, pos[1] + text_surface.get_height())
-                pos[0] = position[0]
-                pos[1] += text_surface.get_height() + self.interline_skip
-            else:
+            if word != '\n':
                 color = word_colors[w_idx]
                 text_surface = main_font.render(word, False, color)
                 text_surface.set_alpha(alpha)
@@ -478,6 +484,10 @@ class Poem(pygame.sprite.Sprite):
                 w_idx += 1
                 w = max(w, pos[0] + text_surface.get_width())
                 pos[0] += text_surface.get_width() + 10
+            else:
+                h = max(h, pos[1] + text_surface.get_height())
+                pos[0] = position[0]
+                pos[1] += text_surface.get_height() + self.interline_skip
         self.text_w = w
         self.text_h = h
 
@@ -547,7 +557,6 @@ all_sprites = pygame.sprite.Group()
 all_sprites.add(player)
 all_sprites.add(enemies)
 
-# Game loop
 running = True
 score = 0
 font = pygame.font.SysFont(None, 36)
@@ -665,12 +674,7 @@ while running:
             all_sprites.add(enemy)
     if next_word_was_hit:
         # Update next_word_idx to the next alive word
-        if len(tiles_by_idx) > 0:
-            next_enemy = min(
-                    tiles_by_idx.values(),
-                    key=lambda enemy: enemy.tile_idx
-            )
-            next_enemy.make_next()
+        update_next_word()
     for b in gone_bullets:
         x, y = b.rect.centerx, b.rect.centery
         blotch = Blotch(b.rect.centerx, b.rect.centery)
