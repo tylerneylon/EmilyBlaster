@@ -690,6 +690,17 @@ while running:
             # Create an AnimSprite for the "+5" effect
             plus_5_sprite = AnimSprite(plus_5)
             plus_5_sprite.base_rect.center = hit.rect.center
+            duration = 0.8
+            plus_5_sprite.fade_out(duration=duration)
+            plus_5_sprite.rotate(cycle_duration=duration * 5,
+                                 stop_after_duration=duration)
+            plus_5_sprite.slide(
+                    (0, -screen_scale(80)), duration=duration).then(
+                # This lambda has a default value set for `s` as a hacky way to
+                # avoid the problem that otherwise we'd refer to a variable that
+                # changed in later iterations of the enclosing code.
+                lambda s=plus_5_sprite: s.kill()
+            )
             effect_sprites.add(plus_5_sprite)
         else:
             score += 1
