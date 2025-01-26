@@ -72,6 +72,38 @@ class AnimSprite(pygame.sprite.Sprite):
         _active_sprites.add(self)
 
     # __________________________________________________________________
+    # Slide
+
+    def slide(self, delta, duration=1.0):
+        """
+        Slide the sprite by `delta` (x, y) over `duration` seconds.
+        """
+        start_time = pygame.time.get_ticks()
+        end_time = start_time + int(duration * 1000)
+        start_pos = self.rect.topleft
+
+        def slide_anim(now):
+            now = min(now, end_time)
+            ongoing = (now < end_time)
+
+            elapsed = now - start_time
+            if end_time > start_time:
+                frac = elapsed / (end_time - start_time)
+            else:
+                frac = 1.0
+
+            new_x = start_pos[0] + int(delta[0] * frac)
+            new_y = start_pos[1] + int(delta[1] * frac)
+            self.rect.topleft = (new_x, new_y)
+
+            return ongoing
+
+        chain = [slide_anim]
+        self.fn_chains.append(chain)
+        self._last_chain = chain
+        return self
+
+    # __________________________________________________________________
     # Flashing
 
     def start_flashing(self):
